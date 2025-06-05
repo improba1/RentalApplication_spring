@@ -1,17 +1,28 @@
-package com.example.demo.services;
+package com.example.demo.services.impl;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.example.demo.model.Vehicle;
 import com.example.demo.repository.VehicleRepository;
-import lombok.RequiredArgsConstructor;
+import com.example.demo.services.VehicleService;
+
 
 @Service
-@RequiredArgsConstructor
 public class VehicleServiceImpl implements VehicleService {
     private final VehicleRepository vehicleRepository;
+
+    @Autowired
+    public VehicleServiceImpl(VehicleRepository vehicleRepository) {
+        this.vehicleRepository = vehicleRepository;
+    }
     @Override
+    @Transactional(readOnly = true)
     public List<Vehicle> findAll() {
         return vehicleRepository.findAll();
     }
@@ -26,10 +37,17 @@ public class VehicleServiceImpl implements VehicleService {
         return vehicleRepository.findById(id);
     }
 
-    @Override
+   @Override
+    @Transactional
     public Vehicle save(Vehicle vehicle) {
-        return vehicleRepository.save(vehicle);
+        if (vehicle.getId() == null || vehicle.getId().isBlank()) {
+            vehicle.setId(UUID.randomUUID().toString());
+            vehicle.setActive(true);
+        }
+        Vehicle savedVehicle = vehicleRepository.save(vehicle);
+        return savedVehicle;
     }
+
 
     @Override
     public List<Vehicle> findAvailableVehicles() {
