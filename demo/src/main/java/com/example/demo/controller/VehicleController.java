@@ -1,22 +1,23 @@
 package com.example.demo.controller;
 
 import java.util.List;
-
-import javax.management.relation.Role;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.demo.dto.LocationDto;
 import com.example.demo.model.User;
 import com.example.demo.model.Vehicle;
 import com.example.demo.repository.UserRepository;
@@ -25,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 @RestController
 @RequestMapping("/api/vehicles")
+@EnableScheduling
 public class VehicleController {
     private static final Logger logger = LoggerFactory.getLogger(VehicleController.class);
     private final VehicleService vehicleService;
@@ -111,5 +113,33 @@ public class VehicleController {
                     logger.warn("User {} attempted to add a vehicle without sufficient permissions", login);
                     return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             }
+    }
+
+    @PutMapping("/location")
+    public ResponseEntity<?> setLocation(@PathVariable String vehicleId, @RequestBody LocationDto locationDto){
+        Vehicle vehicle = vehicleService.findById(vehicleId).orElseThrow();
+        vehicle.setLatitude(locationDto.getLatitude());
+        vehicle.setLongitude(locationDto.getLongitude());
+        vehicleService.save(vehicle);
+        return ResponseEntity.ok("Location was updated");
+    }
+
+    @Scheduled(fixedRate = 20000)
+    public void setLocationSchedule(){
+        List<Vehicle> vehicles = vehicleService.findAll();
+        for (Vehicle vehicle : vehicles) {
+            vehicle.setLatitude(randomLocation(vehicle.getLatitude()));
+            vehicle.setLongitude(randomLocation(vehicle.getLongitude()));
+            vehicleService.save(vehicle);
+        }
+    }
+
+    private double randomLocation(double current){
+        return current + offset();
+    }
+
+    private double offset(){
+        double maxOffset = 0.0005;
+        return (Math.random() * 2 - 1) * maxOffset;
     }
 }

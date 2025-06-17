@@ -1,6 +1,8 @@
 package com.example.demo.services.impl;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -24,6 +26,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 
 public class RentalServiceImpl implements RentalService {
+    private final ArrayList<String> availableCities = new ArrayList<>();
     private final VehicleRepository vehicleRepository;
     private final RentalRepository rentalRepository;
     private final VehicleServiceImpl vehicleService;

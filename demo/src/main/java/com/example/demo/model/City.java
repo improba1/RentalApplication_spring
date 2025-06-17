@@ -1,9 +1,6 @@
 package com.example.demo.model;
 
-
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -12,17 +9,17 @@ import lombok.Getter;
 import lombok.Setter;
 
 @Entity
-@Setter
 @Getter
-@Table(name = "app_user")
-public class User {
+@Setter
+@Table(name = "app_cities")
+public class City {
+    private boolean is_active = true;
+    public City(){
+        this.is_active = true;
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
-    private String login;
-    private String password;
-    @Enumerated(EnumType.STRING)
-    private Role role;
-    private boolean active = true;
-    private String address;
+    private String name;
 }

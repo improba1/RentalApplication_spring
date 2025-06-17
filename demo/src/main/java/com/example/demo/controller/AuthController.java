@@ -57,6 +57,7 @@ public class AuthController {
 
         User user = new User();
         user.setLogin(loginRequest.getLogin());
+        user.setAddress(loginRequest.getAddress());
         user.setPassword(passwordEncoder.encode(loginRequest.getPassword())); 
         user.setRole(Role.USER);
         user.setActive(true);

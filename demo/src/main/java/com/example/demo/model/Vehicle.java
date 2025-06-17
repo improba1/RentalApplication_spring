@@ -27,6 +27,8 @@ public class Vehicle {
     private boolean active = true;
     private boolean rented;
 
+    private double latitude;
+    private double longitude;
 
 
 }
