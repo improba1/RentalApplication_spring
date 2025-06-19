@@ -17,21 +17,22 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.model.City;
+import com.example.demo.model.Role;
 import com.example.demo.model.User;
 import com.example.demo.repository.CitiesRepository;
+import com.example.demo.repository.RoleRepository;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.services.UserManager;
+
+import lombok.AllArgsConstructor;
 
 @RestController
 @RequestMapping("/api/cities")
+@AllArgsConstructor
 public class CitiesController {
     private final UserRepository userRepository;
     private final CitiesRepository citiesRepository;
-
-    @Autowired
-    public CitiesController(UserRepository userRepository, CitiesRepository citiesRepository) {
-        this.userRepository = userRepository;
-        this.citiesRepository = citiesRepository;
-    }
+    private final RoleRepository roleRepository;
 
     @PostMapping("/add")
     public ResponseEntity<?> addCity(
@@ -40,7 +41,7 @@ public class CitiesController {
             String login = userDetails.getUsername();
             User user = userRepository.findByLogin(login)
                 .orElseThrow(() -> new RuntimeException("User not found: " + login));
-            if ("ADMIN".equals(user.getRole().name())) {
+            if (UserManager.isAdmin(user)) {
                 Optional<City> c = citiesRepository.findByName(city.getName());
                 if (c.isPresent() && c.get().is_active() == true){
                     return ResponseEntity.status(HttpStatus.CONFLICT)
@@ -72,7 +73,7 @@ public class CitiesController {
             String login = userDetails.getUsername();
             User user = userRepository.findByLogin(login)
                 .orElseThrow(() -> new RuntimeException("User not found: " + login));
-            if ("ADMIN".equals(user.getRole().name())) {
+            if (UserManager.isAdmin(user)){
                 City city = citiesRepository.findByName(name).orElseThrow();
                 city.set_active(false);
                 citiesRepository.save(city);
@@ -81,6 +82,5 @@ public class CitiesController {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body("You don't have access");
             }
-            
     }
 }

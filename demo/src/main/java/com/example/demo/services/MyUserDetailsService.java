@@ -23,10 +23,20 @@ public class MyUserDetailsService implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         User user = userRepository.findByLogin(username)
             .orElseThrow(() -> new UsernameNotFoundException("User" + username + " doesn't exist"));
-        List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority(user.getRole().toString()));
+        if (!user.isActive()) {
+            throw new UsernameNotFoundException("User is deactivated");
+        }
+        List<GrantedAuthority> authorities = user.getRoles().stream()
+            .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getName()))
+            .collect(java.util.stream.Collectors.toList());
+
         return new org.springframework.security.core.userdetails.User(
             user.getLogin(),
             user.getPassword(),
+            user.isActive(), 
+            true,             
+            true,             
+            true,             
             authorities
         );
     }

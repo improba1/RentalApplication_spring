@@ -22,7 +22,10 @@ import com.example.demo.dto.LocationDto;
 import com.example.demo.model.User;
 import com.example.demo.model.Vehicle;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.services.UserManager;
 import com.example.demo.services.VehicleService;
+
+import org.apache.catalina.mbeans.UserMBean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 @RestController
@@ -56,7 +59,7 @@ public class VehicleController {
             String login = userDetails.getUsername();
             User user = userRepository.findByLogin(login)
                 .orElseThrow(() -> new RuntimeException("User not found: " + login));
-            if ("ADMIN".equals(user.getRole().name())) {
+            if (UserManager.isAdmin(user)) {
                 vehicleService.deleteById(id);
             }else{
                 logger.warn("User {} attempted to delete vehicle with ID: {} without sufficient permissions", login, id);
@@ -75,7 +78,7 @@ public class VehicleController {
         String login = userDetails.getUsername();
         User user = userRepository.findByLogin(login)
             .orElseThrow(() -> new RuntimeException("User not found: " + login));
-        if ("ADMIN".equals(user.getRole().name())) {
+        if (UserManager.isAdmin(user)) {
             return vehicleService.findRentedVehicles();
         }else{
             logger.warn("User {} attempted to access rented vehicles without sufficient permissions", login);
@@ -103,7 +106,7 @@ public class VehicleController {
             String login = userDetails.getUsername();
             User user = userRepository.findByLogin(login)
                 .orElseThrow(() -> new RuntimeException("User not found: " + login));
-            if ("ADMIN".equals(user.getRole().name())) {
+            if (UserManager.isAdmin(user)) {
                 try {
                     Vehicle savedVehicle = vehicleService.save(vehicle);
                     return ResponseEntity.status(HttpStatus.CREATED).body(savedVehicle);
@@ -121,7 +124,7 @@ public class VehicleController {
         String login = userDetails.getUsername();
         User user = userRepository.findByLogin(login)
             .orElseThrow(() -> new RuntimeException("User not found: " + login));
-        if ("ADMIN".equals(user.getRole().name())) {
+        if (UserManager.isAdmin(user)) {
             Vehicle vehicle = vehicleService.findById(locationDto.getVehicleId()).orElseThrow();
             vehicle.setLatitude(locationDto.getLatitude());
             vehicle.setLongitude(locationDto.getLongitude());

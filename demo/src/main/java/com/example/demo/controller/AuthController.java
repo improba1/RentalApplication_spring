@@ -1,5 +1,7 @@
 package com.example.demo.controller;
 
+import java.rmi.registry.Registry;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -14,8 +16,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.dto.LoginRequest;
 import com.example.demo.dto.LoginResponse;
+import com.example.demo.dto.RegisterRequest;
 import com.example.demo.model.Role;
 import com.example.demo.model.User;
+import com.example.demo.repository.RoleRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.security.JwtUtil;
 
@@ -29,6 +33,7 @@ public class AuthController {
     private final JwtUtil jwtUtil;
     private final UserRepository userRepository; 
     private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
+    private final RoleRepository roleRepository;
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest loginRequest) {
@@ -49,17 +54,17 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody LoginRequest loginRequest) {
-        if (userRepository.findByLogin(loginRequest.getLogin()).isPresent()) {
+    public ResponseEntity<String> register(@RequestBody RegisterRequest regRequest) {
+        if (userRepository.findByLogin(regRequest.getLogin()).isPresent()) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body("User with this login already exists.");
         }
 
         User user = new User();
-        user.setLogin(loginRequest.getLogin());
-        user.setAddress(loginRequest.getAddress());
-        user.setPassword(passwordEncoder.encode(loginRequest.getPassword())); 
-        user.setRole(Role.USER);
+        user.setLogin(regRequest.getLogin());
+        user.setAddress(regRequest.getAddress());
+        user.setPassword(passwordEncoder.encode(regRequest.getPassword())); 
+        user.getRoles().add(roleRepository.findByName("USER").get());
         user.setActive(true);
         userRepository.save(user);
         return ResponseEntity.status(HttpStatus.CREATED).body("User registered successfully!");
