@@ -6,6 +6,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -116,12 +117,19 @@ public class VehicleController {
     }
 
     @PutMapping("/location")
-    public ResponseEntity<?> setLocation(@PathVariable String vehicleId, @RequestBody LocationDto locationDto){
-        Vehicle vehicle = vehicleService.findById(vehicleId).orElseThrow();
-        vehicle.setLatitude(locationDto.getLatitude());
-        vehicle.setLongitude(locationDto.getLongitude());
-        vehicleService.save(vehicle);
-        return ResponseEntity.ok("Location was updated");
+    public ResponseEntity<?> setLocation(@RequestBody LocationDto locationDto, @AuthenticationPrincipal UserDetails userDetails){
+        String login = userDetails.getUsername();
+        User user = userRepository.findByLogin(login)
+            .orElseThrow(() -> new RuntimeException("User not found: " + login));
+        if ("ADMIN".equals(user.getRole().name())) {
+            Vehicle vehicle = vehicleService.findById(locationDto.getVehicleId()).orElseThrow();
+            vehicle.setLatitude(locationDto.getLatitude());
+            vehicle.setLongitude(locationDto.getLongitude());
+            vehicleService.save(vehicle);
+            return ResponseEntity.ok("Location was updated");
+        }else{
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("You don't have access!");
+        }
     }
 
     @Scheduled(fixedRate = 20000)
@@ -141,5 +149,22 @@ public class VehicleController {
     private double offset(){
         double maxOffset = 0.0005;
         return (Math.random() * 2 - 1) * maxOffset;
+    }
+
+    @GetMapping("/admin/vehicles")
+    @PreAuthorize("hasRole('ADMIN')")
+    public List<Vehicle> getVehiclesForAdmin() {
+        return vehicleService.findAllActive(); 
+    }
+
+    @GetMapping("/locations")
+    public ResponseEntity<List<LocationDto>> getVehicleLocations() {
+        List<Vehicle> vehicles = vehicleService.findAllActive(); // или findAll(), если нужно все
+
+        List<LocationDto> locations = vehicles.stream()
+            .map(v -> new LocationDto(v.getId(), v.getLatitude(), v.getLongitude()))
+            .toList();
+
+        return ResponseEntity.ok(locations);
     }
 }
